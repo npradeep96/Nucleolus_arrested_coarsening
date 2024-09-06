@@ -1,0 +1,8 @@
+# Number of components and their range of values
+num_components, 2
+color_map, ["Greens", "PuRd"]
+titles, ["Protein", "RNA"]
+# c0_range, [-0.5, 2.5]
+# c1_range, [-0.5, 2.5]
+figure_size, [15, 6]
+

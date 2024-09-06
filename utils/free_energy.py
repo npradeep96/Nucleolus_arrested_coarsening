@@ -12,8 +12,8 @@ class DoubleWellExpansion(object):
 
     .. math::
 
-       f[c_1, c_2] =  \\frac{4}{3} (c_1-\\bar{c}_1)^4 - (\\beta - 2.0)(c_1-\\bar{c}_1)^2 + \\beta w^2 |\\nabla c_1|^2 
-                    + \\frac{c_2}{N_2} \log c_2 + \\chi c_1 c_2 
+       f[c_1, c_2] =  \\frac{1}{6 \\bar{c}_1^3} (c_1-\\bar{c}_1)^4 - \\beta(c_1-\\bar{c}_1)^2 + \\beta w^2 |\\nabla c_1|^2 
+                    + c_2 \log c_2 + \\chi c_1 c_2 
 
     Interactions between molecules of species 1 are described by a quartic-well potential. If :math:`\\beta > 2.0`, then
     we get a double-well and species 1 can phase separate by itself.
@@ -30,7 +30,7 @@ class DoubleWellExpansion(object):
         """Initialize an object of :class:`TwoCompDoubleWellFHCrossQuadratic`.
 
         Args:
-            beta (float): Parameter associated with the quadratic term :math:`- (\\beta - 2.0) (c_1-\\bar{c}_1)^2` of species 1
+            beta (float): Parameter associated with the quadratic term :math:`- \\beta (c_1-\\bar{c}_1)^2` of species 1
 
             chi (float): Parameter that describes the cross-interactions between the species :math:`\\chi c_1 c_2`
 
@@ -50,7 +50,7 @@ class DoubleWellExpansion(object):
         # Assign all free energy parameters to private variables
         self._beta = beta
         self._chi = chi
-        self._N2 = N2
+        # self._N2 = N2
         self._w2 = w2
         self._c_bar_1 = c_bar_1
         # Define a surface energy parameter that is just the product of beta and w2
@@ -89,10 +89,11 @@ class DoubleWellExpansion(object):
             "The instance c_vector[1].grad has no attribute mag associated with it"
 
         # Calculate the free energy
-        fe = (4.0/3.0 * (c_vector[0] - self._c_bar_1) ** 4
-              - (self._beta - 2.0) * (c_vector[0] - self._c_bar_1) ** 2
+        fe = (1.0/(6.0*self._c_bar_1**3) * (c_vector[0] - self._c_bar_1) ** 4
+              + 1.0/(15.0*self._c_bar_1**5) * (c_vector[0] - self._c_bar_1) ** 6
+              - self._beta * (c_vector[0] - self._c_bar_1) ** 2  
               + self._chi * c_vector[0] * c_vector[1]
-              + c_vector[1] * np.log(c_vector[1]) / self._N2
+              + c_vector[1] * np.log(c_vector[1])
               + 0.5 * self._kappa * c_vector[1].grad.mag ** 2)
 
         return fe
@@ -104,14 +105,14 @@ class DoubleWellExpansion(object):
 
         .. math::
 
-            \\mu_1[c_1, c_2] = \\delta f / \\delta c_1 = 16.0/3.0 (c_1-\\bar{c}_1)^3 - 2.0 (\\beta - 2.0) (c_1-\\bar{c}_1)
+            \\mu_1[c_1, c_2] = \\delta f / \\delta c_1 = 2.0/(3.0 \\bar{c}_1^3) (c_1-\\bar{c}_1)^3 - 2.0 (\\beta) (c_1-\\bar{c}_1)
                                + \\chi c_2 - 2.0 \\beta w^2 \\nabla^2 c_1
 
         Chemical potential of species 2:
 
         .. math::
 
-            \\mu_2[c_1, c_2] = \\delta f / \\delta c_2 = \\chi c_1 + \\frac{\\log c_2}{N_2}
+            \\mu_2[c_1, c_2] = \\delta f / \\delta c_2 = \\chi c_1 + \\log c_2
 
 
         Args:
@@ -138,11 +139,12 @@ class DoubleWellExpansion(object):
             "The instance c_vector[1].faceGrad has no attribute divergence associated with it"
 
         # Calculate the chemical potentials
-        mu_1 = (16.0/3.0 * (c_vector[0] - self._c_bar_1) ** 3
-                - 2.0 * (self._beta-2.0) * (c_vector[0] - self._c_bar_1)
+        mu_1 = (2.0/(3.0*self._c_bar_1**3) * (c_vector[0] - self._c_bar_1) ** 3
+                + 2.0/(5.0*self._c_bar_1**5) * (c_vector[0] - self._c_bar_1) ** 5
+                - 2.0 * (self._beta) * (c_vector[0] - self._c_bar_1)
                 + self._chi * c_vector[1]
                 - self._kappa * c_vector[0].faceGrad.divergence)
-        mu_2 = self._chi * c_vector[0] + (1.0/self._N2) * np.log(c_vector[1])
+        mu_2 = self._chi * c_vector[0] + np.log(c_vector[1])
         mu = [mu_1, mu_2]
 
         return mu
@@ -177,6 +179,16 @@ class DoubleWellExpansion(object):
 
         return osmotic_pressure
     
+    def calculate_pre_factor(self, c_vector):
+        """Calculate the pre-factors that multiply the diffusivity of each species
+        
+        For the species 1 which is concentrated, pre-factor = c_0 * (c_bar_1 - c_0)
+        For the species 2 which is dilute, pre-factor = c_1
+        """
+        
+        pre_factor = [c_vector[0]*(self._c_bar_1 - c_vector[0])/self._c_bar_1, c_vector[1]]
+        return pre_factor
+    
     def calculate_jacobian(self, c_vector):
         """Calculate the Jacobian matrix of coefficients to feed to the transport equations.
 
@@ -184,7 +196,7 @@ class DoubleWellExpansion(object):
         that depends on the concentration fields:
 
         .. math::
-            J_{11} = \\delta^2 f_{bulk} / \\delta c^2_1 = 16.0 (c_1 - \\bar{c}_1)^2 - 2.0 (\\beta - 2.0)
+            J_{11} = \\delta^2 f_{bulk} / \\delta c^2_1 = 
 
         .. math::
             J_{12} = \\delta^2 f_{bulk} / \\delta c_1 \\delta c_2 = \\chi
@@ -193,7 +205,7 @@ class DoubleWellExpansion(object):
             J_{21} = \\delta^2 f_{bulk} / \\delta c_1 \\delta c_2 = \\chi
 
         .. math::
-            J_{22} = \\delta^2 f_{bulk} / \\delta c^2_2 = \\frac{1.0}{N_2 c_2}
+            J_{22} = \\delta^2 f_{bulk} / \\delta c^2_2 = \\frac{1.0}{c_2}
 
         Args:
             c_vector (numpy.ndarray): A 2x1 vector of species concentrations that looks like :math:`[c_1, c_2]`.The
@@ -207,8 +219,13 @@ class DoubleWellExpansion(object):
         # Check that c_vector satisfies the necessary conditions
         assert len(c_vector) == 2, \
             "The shape of c_vector passed to TwoCompDoubleWellFHCrossQuadratic.calculate_mu() is not 2x1"
-
+        
         # Calculate the Jacobian matrix
-        jacobian = np.array([[16.0 * (c_vector[0] - self._c_bar_1) ** 2 - 2.0 *(self._beta-2.0), self._chi],
-                             [self._chi, np.divide(1.0, self._N2)]])
+        # jacobian = np.array([[2.0/self._c_bar_1**3 * (c_vector[0] - self._c_bar_1) ** 2 - 2.0 * self._beta, self._chi],
+        #                      [self._chi, 1.0]])
+        # jacobian = np.array([[2.0*self._c_bar_1/((2.0*self._c_bar_1 - c_vector[0])*c_vector[0]) - 2.0 * self._beta, self._chi],
+        #                      [self._chi, 1.0]])
+        jacobian = np.array([[self._c_bar_1/(c_vector[0]*(self._c_bar_1 - c_vector[0])) - 2.0 * self._beta, 
+                              self._chi], 
+                             [self._chi, 1.0]])
         return jacobian

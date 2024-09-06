@@ -100,18 +100,36 @@ class FCModel(object):
             "self._free_energy instance does not have an attribute kappa describing the surface energy"
 
         jacobian = self._free_energy.calculate_jacobian(c_vector)
+        # pre_factor = self._free_energy.calculate_pre_factor(c_vector)
 
+        # print(np.shape(pre_factor[1]))
+        # print(np.shape(pre_factor[0]))
+        # print(np.shape(jacobian[0,0]))
+        # print(np.shape(jacobian[0,1]))
+        # print(jacobian[1,1])
+        # print(self._free_energy.kappa)
+        # print(len(c_vector[0]))
+        # print(len(c_vector[1]))
+        
         # Model B dynamics for species 1
         eqn_1 = (fp.TransientTerm(coeff=1.0, var=c_vector[0])
                  == fp.DiffusionTerm(coeff=self._M1 * jacobian[0, 0], var=c_vector[0])
                  + fp.DiffusionTerm(coeff=self._M1 * jacobian[0, 1], var=c_vector[1])
-                 - fp.DiffusionTerm(coeff=(self._M1, self._free_energy.kappa), var=c_vector[0])
+                 - fp.DiffusionTerm(coeff=(self._M1, self._free_energy.kappa), 
+                                           var=c_vector[0])
                  )
 
         # Model AB dynamics for species 2 with production and degradation reactions
+        # eqn_2 = (fp.TransientTerm(var=c_vector[1])
+        #             == fp.DiffusionTerm(coeff=self._M2 * jacobian[1, 0], var=c_vector[0])
+        #             + fp.DiffusionTerm(coeff=self._M2 * jacobian[1, 1], var=c_vector[1]) # This expression is corrrect!
+        #             + self._production_term.rate(c_vector[0])
+        #             - self._degradation_term.rate(c_vector[1])
+        #             )
+        
+        # Model B dynamics for species 2 with production and degradation reactions
         eqn_2 = (fp.TransientTerm(var=c_vector[1])
-                    == fp.DiffusionTerm(coeff=self._M2 * c_vector[1] * jacobian[1, 0], var=c_vector[0])
-                    + fp.DiffusionTerm(coeff=self._M2 * jacobian[1, 1], var=c_vector[1]) # This expression is corrrect!
+                    == fp.DiffusionTerm(coeff=self._M2 * jacobian[1, 1], var=c_vector[1]) 
                     + self._production_term.rate(c_vector[0])
                     - self._degradation_term.rate(c_vector[1])
                     )
