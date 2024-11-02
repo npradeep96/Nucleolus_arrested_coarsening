@@ -7,7 +7,7 @@ This Github repo contains the code associated with simulations and data analysis
 1. ```scripts/``` contains the python code to numerically integrate the partial differential equations in the model and get the concentration profiles of the FC proteins and RNA as a function of space and time. The numerical integration is done by ```run_simulation.py``` and ```sweep_parameter.py``` is a wrapper script around ```run_simulation.py``` to enable parameter sweeps by running this script for different values of a parameter present in ```inputs/sweep_parameters.txt```.
 2. The directory ```inputs``` contains two text files: ```input_parameters.txt``` which contains parameters related to the free energy, kinetics, initial conditions, geometry, and numerical parameters for integration that are inputs to ```scripts/run_simulation.py```. The file ```scripts/sweep_parameters``` can contain a parameter name and a list of parameter values that are used to run parameter sweeps over those values of the parameter.
 3. The directory ```utils``` contains helper functions that are used by ```scripts/run_simulations.py```.
-4. The directory ```analysis`` contains: (i) Data and jupyter notebooks for analysis of microscopy images in ```Microscopy_droplet_size_analysis```. (ii) Scripts to generate movies from simulation data in ```Simulation_analysis```
+4. The directory ```analysis``` contains: (i) Data and jupyter notebooks for analysis of microscopy images in ```Microscopy_droplet_size_analysis```. (ii) Scripts to generate movies from simulation data in ```Simulation_analysis```
 
 ## Create conda environment and install libraries from the requirements.txt
 
