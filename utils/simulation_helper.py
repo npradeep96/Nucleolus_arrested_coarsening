@@ -101,11 +101,12 @@ def set_free_energy(input_params):
     free_en = None
 
     if input_params['free_energy_type'] == 1:
-        free_en = free_energy.DoubleWellExpansion(beta=input_params['beta'],
+        free_en = free_energy.FloryHugginsExpansion(beta=input_params['beta'],
                                                   chi=input_params['chi'],
-                                                  N2=input_params['N_2'],
-                                                  w2=input_params['w2'],
-                                                  c_bar_1=input_params['c_bar'])
+                                                  l1=input_params['l1'],
+                                                  l2=input_params['l2'],
+                                                  w2=input_params['w2']
+                                                  )
     
     return free_en
 
@@ -164,6 +165,7 @@ def set_model_equations(input_params, concentration_vector, free_en, simulation_
     """
     equations = dynamical_equations.FCModel(mobility_1=input_params['M1'],
                                             mobility_2=input_params['M2'],
+                                            modelAB_dynamics_type=input_params['modelAB_dynamics_type'],
                                             degradation_constant=input_params['k_degradation'],
                                             free_energy=free_en,
                                             boundary_condition=boundary_condition)

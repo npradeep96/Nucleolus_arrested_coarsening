@@ -40,7 +40,7 @@ def add_noise_to_initial_conditions(c_vector, sigmas, random_seed):
     for i in range(len(c_vector)):
         if type(c_vector[i]) == fp.variables.cellVariable.CellVariable:
             number_of_mesh_elements = np.size(c_vector[i].value)
-            c_vector[i].value += sigmas[i] * np.random.randn(number_of_mesh_elements)
+            c_vector[i].value += sigmas[i] * (np.random.uniform(size=number_of_mesh_elements) - 0.5)
 
 
 def nucleate_spherical_seed(concentration, value, dimension, geometry, nucleus_size, location):

@@ -24,7 +24,7 @@ def get_output_dir_name(input_params):
 
     output_dir = 'M_1_' + str(input_params['M1']) + '_M_2_' + str(input_params['M2']) \
                  + '_beta_' + str(input_params['beta']) \
-                 + '_chi_' + str(input_params['chi']) + '_N2_' + str(input_params['N_2']) \
+                 + '_chi_' + str(input_params['chi']) \
                  + '_w2_' + str(input_params['w2']) \
                  + '_K_' + str(input_params['k_production']) \
                  + '_c_initial_' + str(input_params['initial_values'][0])

@@ -1,29 +1,42 @@
 # Parameters associated with the free energy
 free_energy_type, 1
-c_bar, 1.0
-beta, 2.8
-chi, 2.0
-N_2, 1.0
-w2, 0.01
+beta, 40.5
+# in units of kT
+chi, 40.0
+#in units of kT
+l1, 0.016
+l2, 20.0
+w2, 0.004
+# in units of 0.01 micron^2
 
 # Kinetic parameters
 reaction_type, 1
-M1, 24.0
+M1, 24.0 
+# in units of 0.01 micron^2/min
 M2, 2.4
-k_production, 0.03
-k_degradation, 0.3
+# in units of 0.01 micron^2/min
+k_production, 0.05
+# in units of 1/min
+k_degradation, 0.5
+# in units of 1/min
+modelAB_dynamics_type, 2
+# modelAB_dynamics_type = 2 for Reaction-Diffusion dynamics of rRNA
 
 # Concentration variables
 n_concentrations, 2
-initial_values, [0.5, 0.0]
-initial_condition_noise_variance, [0.02, 0.0]
+initial_values, [0.09, 0.0]
+# The first element in above vector is FC protein concentration
+# The second element in above vector is rRNA concentration
+initial_condition_noise_variance, [0.1, 0.0]
 random_seed, 42
 
-# Boundary conditions
+# Boundary conditions 
+# Legacy stuff. Not used for this paper.
 boundary_condition_type, [0, 0]
 boundary_value, [0.0, 0.0]
 
 # Nucleate a seed for concentrations
+# Legacy stuff. Not used for this paper.
 nucleate_seed, [0, 0]
 seed_value, [0.0, 0.0]
 nucleus_size, [0.0, 0.0]
@@ -33,18 +46,23 @@ location, [[0,0], [0,0]]
 dimension, 2
 circ_flag, 1
 radius, 15.0
-# length, 10.0
+# in units of 0.1 micron
 dx, 0.2
+# in units of 0.1 micron
 
 # Numerical integration
 dt, 1e-6
+# in units of minutes
 dt_max, 0.01
-dt_min, 1e-8
-duration, 10
-total_steps, 10000
+dt_min, 1e-10
+duration, 40
+total_steps, 4000
 max_sweeps, 10
-max_residual, 0.02
-data_log, 200
+max_residual, 0.001
+data_log, 80
 
 # Implement time profile of parameters
 time_profile, []
+# For transcription ON-OFF-ON simulations, use the below for time_profile instead,
+# which implements turning trnascription OFF at t = 40 mins and ON at t = 100 mins:
+# time_profile, [{'transition_time': 40.0, 'dt': 1e-06, 'k_production': 0.0}, {'transition_time': 100.0, 'dt': 1e-06, 'k_production': 0.05}]

@@ -21,12 +21,13 @@ class FCModel(object):
     Species 1 relaxes via Model B dynamics, with a mobility coefficient :math:`M_1`. It's total amount in the domain is
     conserved.
 
-    Species 2 undergoes a Model AB dynamics. Detailed balance is broken in this equation.
+    Species 2 undergoes either Model AB dynamics or Model B dynamics. Detailed balance is broken in this equation.
     It's mobility coefficient is :math:`M_2` and is produced by species 1 with a rate constant :math:`k_1` and degrades
     with a rate constant :math:`k_2`
     """
 
-    def __init__(self, mobility_1, mobility_2, degradation_constant, free_energy,
+    def __init__(self, mobility_1, mobility_2, modelAB_dynamics_type, 
+                 degradation_constant, free_energy,
                  boundary_condition):
         """Initialize an object of :class:`TwoComponentModelBModelAB`.
 
@@ -35,11 +36,11 @@ class FCModel(object):
 
             mobility_2 (float): Mobility of species 2
             
+            modelAB_dynamics_type (integer): If = 1, Model AB dynamics for species 2. If = 2, reaction-diffusion for species 2.
+            
             degradation_constant (float): Rate constant for first-order degradation of species 2
 
             free_energy: An instance of one of the free energy classes present in :mod:`utils.free_energy`
-
-            c_vector (numpy.ndarray): A 2x1 vector of species concentrations that looks like :math:`[c_1, c_2]`.
 
             boundary_condition (list): A list containing the boundary conds. on the exterior face for all conc. variable
 
@@ -57,6 +58,7 @@ class FCModel(object):
         self._production_term = None
         self._degradation_term = rates.FirstOrderReaction(k=degradation_constant)
         # Define model equations
+        self._modelAB_dynamics_type = modelAB_dynamics_type
         self._equations = None
         # The fipy solver used to solve the model equations
         self._solver = None
@@ -65,10 +67,6 @@ class FCModel(object):
         """ Sets the nature of the production term of species :math:`c_2` from :math:`c_1`
 
         If reaction_type == 1: First order reaction with rate constant uniform in space.
-
-        If reaction_type == 2: First order reaction with rate constant Gaussian in space. This requires the parameter
-        sigma (width of Gaussian), coordinates of the center point of Gaussian, and the mesh geometry as optional input
-        arguments to compute rate constant at every position in space.
 
         Args:
             reaction_type (integer): An integer value describing what reaction type to consider.
@@ -100,39 +98,30 @@ class FCModel(object):
             "self._free_energy instance does not have an attribute kappa describing the surface energy"
 
         jacobian = self._free_energy.calculate_jacobian(c_vector)
-        # pre_factor = self._free_energy.calculate_pre_factor(c_vector)
 
-        # print(np.shape(pre_factor[1]))
-        # print(np.shape(pre_factor[0]))
-        # print(np.shape(jacobian[0,0]))
-        # print(np.shape(jacobian[0,1]))
-        # print(jacobian[1,1])
-        # print(self._free_energy.kappa)
-        # print(len(c_vector[0]))
-        # print(len(c_vector[1]))
-        
         # Model B dynamics for species 1
         eqn_1 = (fp.TransientTerm(coeff=1.0, var=c_vector[0])
                  == fp.DiffusionTerm(coeff=self._M1 * jacobian[0, 0], var=c_vector[0])
                  + fp.DiffusionTerm(coeff=self._M1 * jacobian[0, 1], var=c_vector[1])
-                 - fp.DiffusionTerm(coeff=(self._M1, self._free_energy.kappa), 
+                 - fp.DiffusionTerm(coeff=(self._M1 * 0.1, self._free_energy.kappa), 
                                            var=c_vector[0])
                  )
 
-        # Model AB dynamics for species 2 with production and degradation reactions
-        # eqn_2 = (fp.TransientTerm(var=c_vector[1])
-        #             == fp.DiffusionTerm(coeff=self._M2 * jacobian[1, 0], var=c_vector[0])
-        #             + fp.DiffusionTerm(coeff=self._M2 * jacobian[1, 1], var=c_vector[1]) # This expression is corrrect!
-        #             + self._production_term.rate(c_vector[0])
-        #             - self._degradation_term.rate(c_vector[1])
-        #             )
-        
-        # Model B dynamics for species 2 with production and degradation reactions
-        eqn_2 = (fp.TransientTerm(var=c_vector[1])
-                    == fp.DiffusionTerm(coeff=self._M2 * jacobian[1, 1], var=c_vector[1]) 
-                    + self._production_term.rate(c_vector[0])
-                    - self._degradation_term.rate(c_vector[1])
-                    )
+        if self._modelAB_dynamics_type == 1:
+            # Model AB dynamics for species 2 with production and degradation reactions
+            eqn_2 = (fp.TransientTerm(var=c_vector[1])
+                        == fp.DiffusionTerm(coeff=self._M2 * jacobian[1, 0], var=c_vector[0])
+                        + fp.DiffusionTerm(coeff=self._M2 * jacobian[1, 1], var=c_vector[1])
+                        + self._production_term.rate(c_vector[0])
+                        - self._degradation_term.rate(c_vector[1])
+                        )
+        elif self._modelAB_dynamics_type == 2:
+            # Model B dynamics for species 2 with production and degradation reactions
+            eqn_2 = (fp.TransientTerm(var=c_vector[1])
+                        == fp.DiffusionTerm(coeff=self._M2 * jacobian[1, 1], var=c_vector[1]) 
+                        + self._production_term.rate(c_vector[0])
+                        - self._degradation_term.rate(c_vector[1])
+                        )
         
         self._equations = [eqn_1, eqn_2]
 

@@ -21,12 +21,12 @@ matplotlib.use('Agg')
 
 
 # Settings to make pretty plots using pyplot
-rc('font', **{'family': 'serif', 'serif': ['Times']})
-rc('text', usetex=True)
+rc('font', **{'family': 'sans-serif', 'sans-serif': ['Arial']})
+rc('text', usetex=False)
 plt.rcParams['xtick.labelsize'] = 20
 plt.rcParams['ytick.labelsize'] = 20
 plt.rcParams['font.size'] = 20
-plt.rcParams["text.usetex"] = True
+plt.rcParams["text.usetex"] = False
 
 
 def write_movies_two_component_2d(path, hdf5_file, movie_parameters, mesh, fps=3):
@@ -89,15 +89,15 @@ def write_movies_two_component_2d(path, hdf5_file, movie_parameters, mesh, fps=3
             fig, ax = plt.subplots(1, int(movie_parameters['num_components']), figsize=movie_parameters['figure_size'])
             for i in range(int(movie_parameters['num_components'])):
                 cs = ax[i].tricontourf(mesh.x, mesh.y, concentration_profile[i][t],
-                                       levels=np.linspace(int(plotting_range[i][0]*100)*0.01,
-                                                          int(plotting_range[i][1]*100)*0.01,
+                                       levels=np.linspace(int(plotting_range[i][0]*1000)*0.001,
+                                                          int(plotting_range[i][1]*1000)*0.001,
                                                           256),
                                        cmap=movie_parameters['color_map'][i])
                 # ax[i].tick_params(axis='both', which='major', labelsize=20)
                 ax[i].xaxis.set_tick_params(labelbottom=False)
                 ax[i].yaxis.set_tick_params(labelleft=False)
-                cbar = fig.colorbar(cs, ax=ax[i], ticks=np.linspace(int(plotting_range[i][0]*100)*0.01,
-                                                                    int(plotting_range[i][1]*100)*0.01,
+                cbar = fig.colorbar(cs, ax=ax[i], ticks=np.linspace(int(plotting_range[i][0]*1000)*0.001,
+                                                                    int(plotting_range[i][1]*1000)*0.001,
                                                                     3))
                 cbar.ax.tick_params(labelsize=30)
                 ax[i].set_title(movie_parameters['titles'][i], fontsize=40)
